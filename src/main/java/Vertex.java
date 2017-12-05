@@ -21,6 +21,13 @@ public class Vertex {
         connectedTo = new ArrayList<>();
     }
 
+    Vertex(Vertex vertex){
+        this.id = vertex.id;
+        this.label = vertex.getLabel();
+        this.name = vertex.getName();
+        this.connectedTo = vertex.getConnections();
+    }
+
     public String getName() {
         return name;
     }
@@ -46,5 +53,15 @@ public class Vertex {
     public void addNeighbor(Vertex vertex){
         if(!connectedTo.contains(vertex))
             connectedTo.add(vertex);
+    }
+
+    public void removeNeighbor(Vertex vertex){
+        if(connectedTo.contains(vertex)){
+            connectedTo.remove(vertex);
+        }
+    }
+
+    public void removeNeighbor(List<Vertex> vertices){
+        connectedTo.removeAll(vertices);
     }
 }
