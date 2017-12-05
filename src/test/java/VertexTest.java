@@ -12,7 +12,7 @@ public class VertexTest {
 
     @Test
     public void getId() throws Exception {
-        assertEquals(2,vertex1.getId());
+        assertEquals(1,vertex1.getId());
     }
 
     @Test

@@ -17,6 +17,7 @@ class FileHelper {
      */
     FileHelper(ApplicationProperties properties) {
         this.prop = properties;
+
     }
 
     /**
