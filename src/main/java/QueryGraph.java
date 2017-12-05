@@ -7,9 +7,9 @@ public class QueryGraph {
     private FileHelper fileHelper;
     private String targetFileName;
     Map<Integer, Vertex> SearchQueryVertices = new HashMap<>();
-    List<Vertex> core;
-    List<Vertex> forest;
-    List<Vertex> leaf;
+    private List<Vertex> core;
+    private List<Vertex> forest;
+    private List<Vertex> leaf;
 
     public QueryGraph(ApplicationProperties prop, File queryFile, FileHelper fileHelper, String targetFileName) {
         this.QueryFile = queryFile;
@@ -18,7 +18,7 @@ public class QueryGraph {
         this.targetFileName = targetFileName;
     }
 
-    private void generateQueryGraph(File file, String target) {
+    public void generateQueryGraph(File file, String target) {
         List<String[]> proteinQueryFile = fileHelper.readFile(file, " ");
         if (file.isFile() && proteinQueryFile != null) {
             readQueryGraph(target, proteinQueryFile);
@@ -26,6 +26,8 @@ public class QueryGraph {
         List<Vertex> queryVertices = new ArrayList<>();
         SearchQueryVertices.values().forEach(v-> queryVertices.add(new Vertex(v)));
         core = computeCore(queryVertices);
+        System.out.println(queryVertices);
+        //leaf = computeLeaf(queryVertices);
     }
 
     private List<Vertex> computeCore(List<Vertex> vertices){
@@ -41,11 +43,11 @@ public class QueryGraph {
                     pruneVertices.add(v);
                 }
             }
+            for (Vertex v :
+                    vertices) {
+                v.removeNeighbor(pruneVertices);
+            }
             vertices.removeAll(pruneVertices);
-//            for (Vertex v :
-//                    vertices) {
-//                v.removeNeighbor(pruneVertices);
-//            }
             vertices.sort(Comparator.comparingInt(Vertex::getDegree));
             int degree = vertices.get(0).getDegree();
             if(degree > 1){
@@ -93,5 +95,12 @@ public class QueryGraph {
         Vertex v = new Vertex(id,label,name);
         SearchQueryVertices.put(id,v);
     }
+
+    private List<Vertex> computeLeaf(List<Vertex> vertices){
+
+        return null;
+    }
+
+
 
 }

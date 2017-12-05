@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Vertex {
@@ -62,6 +61,9 @@ public class Vertex {
     }
 
     public void removeNeighbor(List<Vertex> vertices){
-        connectedTo.removeAll(vertices);
+        for (Vertex v :
+                vertices) {
+            removeNeighbor(v);
+        }
     }
 }
