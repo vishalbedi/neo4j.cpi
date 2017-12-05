@@ -11,14 +11,12 @@ import java.util.stream.Stream;
 class FileHelper {
     private ApplicationProperties prop;
 
-
     /**
      * Class that handles File operations
      * @param properties Instance of ApplicationProperties
      */
     FileHelper(ApplicationProperties properties) {
         this.prop = properties;
-
     }
 
     /**
