@@ -1,5 +1,6 @@
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class QueryGraph {
     private ApplicationProperties prop;
@@ -23,8 +24,7 @@ public class QueryGraph {
         if (file.isFile() && proteinQueryFile != null) {
             readQueryGraph(target, proteinQueryFile);
         }
-        List<Vertex> queryVertices = new ArrayList<>();
-        SearchQueryVertices.values().forEach(v-> queryVertices.add(new Vertex(v)));
+        List<Vertex> queryVertices = deepCopy(SearchQueryVertices.values().stream().collect(Collectors.toList()));
         core = computeCore(queryVertices);
         System.out.println(queryVertices);
         //leaf = computeLeaf(queryVertices);
@@ -59,6 +59,20 @@ public class QueryGraph {
     }
 
 
+    private List<Vertex> deepCopy(List<Vertex> vertices){
+        Map<Integer, Vertex> copy = new HashMap<>();
+        vertices.forEach(v-> copy.put(v.getId(),new Vertex(v)));
+        for (Vertex v :
+                vertices) {
+            Vertex copyV = copy.get(v.getId());
+            List<Integer> neghborIds = v.getConnections().stream().map(vertex -> vertex.getId()).collect(Collectors.toList());
+            for (int id :
+                 neghborIds) {
+                copyV.addNeighbor(copy.get(id));
+            }
+        }
+        return copy.values().stream().collect(Collectors.toList());
+    }
     private void readQueryGraph(String target, List<String[]> proteinQueryFile) {
         int currentLine = 0;
         String[] line = proteinQueryFile.get(currentLine++);

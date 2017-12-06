@@ -24,7 +24,7 @@ public class Vertex {
         this.id = vertex.id;
         this.label = vertex.getLabel();
         this.name = vertex.getName();
-        this.connectedTo = vertex.getConnections();
+        connectedTo = new ArrayList<>();
     }
 
     public String getName() {
