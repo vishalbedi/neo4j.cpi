@@ -26,8 +26,13 @@ public class QueryGraph {
         }
         List<Vertex> queryVertices = deepCopy(SearchQueryVertices.values().stream().collect(Collectors.toList()));
         core = computeCore(queryVertices);
-        System.out.println(queryVertices);
-        //leaf = computeLeaf(queryVertices);
+
+        queryVertices = deepCopy(SearchQueryVertices.values().stream().collect(Collectors.toList()));
+        leaf = computeLeaf(queryVertices);
+
+        queryVertices = deepCopy(SearchQueryVertices.values().stream().collect(Collectors.toList()));
+        forest = computeForest(queryVertices);
+
     }
 
     private List<Vertex> computeCore(List<Vertex> vertices){
@@ -43,11 +48,11 @@ public class QueryGraph {
                     pruneVertices.add(v);
                 }
             }
+            vertices.removeAll(pruneVertices);
             for (Vertex v :
                     vertices) {
                 v.removeNeighbor(pruneVertices);
             }
-            vertices.removeAll(pruneVertices);
             vertices.sort(Comparator.comparingInt(Vertex::getDegree));
             int degree = vertices.get(0).getDegree();
             if(degree > 1){
@@ -111,10 +116,26 @@ public class QueryGraph {
     }
 
     private List<Vertex> computeLeaf(List<Vertex> vertices){
-
-        return null;
+        List<Vertex> leaves = new ArrayList<>();
+        for(Vertex v : vertices){
+            if(v.getDegree() == 1){
+                leaves.add(v);
+            }
+        }
+        return leaves;
     }
 
+    private List<Vertex> computeForest(List<Vertex> vertices){
+        List<Vertex> forest = new ArrayList<>();
+        List<Integer> coreids = core.stream().map(vertex -> vertex.getId()).collect(Collectors.toList());
+        List<Integer> leafids = leaf.stream().map(vertex -> vertex.getId()).collect(Collectors.toList());
+        for(Vertex v : vertices){
+            if(!coreids.contains(v.getId()) && !leafids.contains(v.getId())){
+                forest.add(v);
+            }
+        }
+        return forest;
+    }
 
 
 }
