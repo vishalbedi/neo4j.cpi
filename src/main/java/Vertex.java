@@ -66,4 +66,14 @@ public class Vertex {
             removeNeighbor(v);
         }
     }
+
+    public int maxNeighborDegree(){
+        int max = Integer.MIN_VALUE;
+        for(Vertex n : connectedTo){
+            if(n.getDegree() > max){
+                max = n.getDegree();
+            }
+        }
+        return max;
+    }
 }

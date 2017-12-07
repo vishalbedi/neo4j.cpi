@@ -137,5 +137,8 @@ public class QueryGraph {
         return forest;
     }
 
+    private boolean candVerify(){
+        return false;
+    }
 
 }
