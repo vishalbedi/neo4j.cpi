@@ -24,6 +24,9 @@ public class QueryGraph {
         if (file.isFile() && proteinQueryFile != null) {
             readQueryGraph(target, proteinQueryFile);
         }
+    }
+
+    void computeDecomposotions(){
         List<Vertex> queryVertices = deepCopy(SearchQueryVertices.values().stream().collect(Collectors.toList()));
         core = computeCore(queryVertices);
 
@@ -32,7 +35,27 @@ public class QueryGraph {
 
         queryVertices = deepCopy(SearchQueryVertices.values().stream().collect(Collectors.toList()));
         forest = computeForest(queryVertices);
+    }
 
+    public void create(){
+        generateQueryGraph(this.QueryFile,this.targetFileName);
+        computeDecomposotions();
+    }
+
+    public List<Vertex> getCore(){
+       return null;
+    }
+
+    public List<Vertex> getForest(){
+        return null;
+    }
+
+    public List<Vertex> getLeaf (){
+        return null;
+    }
+
+    public List<Vertex> getQueryGraph(){
+        return null;
     }
 
     private List<Vertex> computeCore(List<Vertex> vertices){
@@ -135,10 +158,6 @@ public class QueryGraph {
             }
         }
         return forest;
-    }
-
-    private boolean candVerify(){
-        return false;
     }
 
 }

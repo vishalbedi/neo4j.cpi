@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 public class CPI {
 
     private final ApplicationProperties applicationProperties;
-    private final FileHelper fileHelper;
+    private QueryGraph queryGraph;
 
-    public CPI(ApplicationProperties applicationProperties, FileHelper fileHelper){
+    public CPI(ApplicationProperties applicationProperties, QueryGraph queryGraph){
         this.applicationProperties = applicationProperties;
-        this.fileHelper = fileHelper;
+        this.queryGraph = queryGraph;
     }
 
     public boolean candVerify(Node v, Vertex u){
