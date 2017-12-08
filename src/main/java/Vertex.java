@@ -6,6 +6,7 @@ public class Vertex {
     private String label;
     private String name;
     private List<Vertex> connectedTo;
+    private boolean visited = false;
 
     Vertex(int id, String label, String name){
         this.id = id;
@@ -43,11 +44,15 @@ public class Vertex {
         return connectedTo;
     }
 
+    public boolean getVisited(){ return visited; }
+
 
 
     public int getDegree(){
         return connectedTo.size();
     }
+
+    public void setVisited(boolean value){ visited = true; }
 
     public void addNeighbor(Vertex vertex){
         if(!connectedTo.contains(vertex))

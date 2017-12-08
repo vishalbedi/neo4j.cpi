@@ -161,4 +161,26 @@ public class QueryGraph {
         return forest;
     }
 
+    public Map<Integer, List<Vertex>> getLevelTree(Vertex root){
+        Map<Integer, List<Vertex>> levelTree = new HashMap<>();
+        int level = 1;
+        List<Vertex> levelVertices = new ArrayList<>();
+        levelVertices.add(root);
+        levelTree.put(1, levelVertices);
+        Set<Vertex> visited = new HashSet<>();
+        while(visited.size() != SearchQueryVertices.size()){
+            level+=1;
+            List<Vertex> children = new ArrayList<>();
+            for (Vertex p : levelTree.get(level-1)){
+                for(Vertex n : p.getConnections()){
+                    if(!visited.contains(n)){
+                        visited.add(n);
+                        children.add(n);
+                    }
+                }
+            }
+            levelTree.put(level, children);
+        }
+        return levelTree;
+    }
 }

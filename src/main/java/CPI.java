@@ -53,6 +53,7 @@ public class CPI {
         System.out.println(core.size());
         Vertex root = _rootSelection(core);
         System.out.println("root "+root.getLabel());
+        computeCPI(root);
     }
 
     private Vertex _rootSelection(List<Vertex> core){
@@ -63,15 +64,7 @@ public class CPI {
             Map<Vertex, List<Node>> candidatesList = new HashMap<>();
 
             for(Vertex v : core){
-                List<Node> candidates_v = new ArrayList<>();
-                ResourceIterator<Node> iterator = db.findNodes(Label.label(v.getLabel()));
-                while(iterator.hasNext()){
-                    Node n = iterator.next();
-                    if(candVerify(n, v)){
-                        candidates_v.add(n);
-                    }
-                }
-                candidatesList.put(v, candidates_v);
+                candidatesList.put(v, candidateComputation(v));
             }
 
             double arg_min = Double.MAX_VALUE;
@@ -85,4 +78,24 @@ public class CPI {
             return root;
         }
     }
+
+    private List<Node> candidateComputation(Vertex v){
+        List<Node> candidates_v = new ArrayList<>();
+        ResourceIterator<Node> iterator = db.findNodes(Label.label(v.getLabel()));
+        while(iterator.hasNext()){
+            Node n = iterator.next();
+            if(candVerify(n, v)){
+                candidates_v.add(n);
+            }
+        }
+        return candidates_v;
+    }
+
+    private void computeCPI (Vertex root){
+        List<Node> rootCandidates = candidateComputation(root);
+        root.setVisited(true);
+        queryGraph.getLevelTree(root);
+
+    }
+
 }

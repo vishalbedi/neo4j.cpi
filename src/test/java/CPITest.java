@@ -12,7 +12,7 @@ public class CPITest {
     String validFileName = "config.properties";
     ApplicationProperties applicationProperties = new ApplicationProperties(validFileName);
     FileHelper fileHelper = new FileHelper(applicationProperties);
-    File queryFile = fileHelper.getAllFileNames(applicationProperties.ProteinsQueryPath(),8).collect(Collectors.toList()).get(5);
+    File queryFile = fileHelper.getAllFileNames(applicationProperties.ProteinsQueryPath(),8).collect(Collectors.toList()).get(3);
     String targetFilename = "backbones_1AF7";
     QueryGraph queryGraph = new QueryGraph(applicationProperties, queryFile, fileHelper, targetFilename);
 
