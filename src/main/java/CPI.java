@@ -52,7 +52,7 @@ public class CPI {
         List<Vertex> core = queryGraph.getCore();
         System.out.println(core.size());
         Vertex root = _rootSelection(core);
-        System.out.println("root "+root.getLabel());
+        System.out.println("root--> "+root.getLabel());
         computeCPI(root);
     }
 
@@ -94,7 +94,13 @@ public class CPI {
     private void computeCPI (Vertex root){
         List<Node> rootCandidates = candidateComputation(root);
         root.setVisited(true);
-        queryGraph.getLevelTree(root);
+        Map<Integer, List<Vertex>> levelTree = queryGraph.getLevelTree(root);
+        for (int i : levelTree.keySet()){
+            for( Vertex v : levelTree.get(i)){
+                System.out.print(v.getId() +"  ");
+            }
+            System.out.println();
+        }
 
     }
 
