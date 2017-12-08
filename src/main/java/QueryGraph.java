@@ -17,16 +17,17 @@ public class QueryGraph {
         this.fileHelper = fileHelper;
         this.prop = prop;
         this.targetFileName = targetFileName;
+        this.create();
     }
 
-    public void generateQueryGraph(File file, String target) {
+    private void generateQueryGraph(File file, String target) {
         List<String[]> proteinQueryFile = fileHelper.readFile(file, " ");
         if (file.isFile() && proteinQueryFile != null) {
             readQueryGraph(target, proteinQueryFile);
         }
     }
 
-    void computeDecomposotions(){
+    private void computeDecomposotions(){
         List<Vertex> queryVertices = deepCopy(SearchQueryVertices.values().stream().collect(Collectors.toList()));
         core = computeCore(queryVertices);
 
@@ -37,21 +38,21 @@ public class QueryGraph {
         forest = computeForest(queryVertices);
     }
 
-    public void create(){
+    private void create(){
         generateQueryGraph(this.QueryFile,this.targetFileName);
         computeDecomposotions();
     }
 
     public List<Vertex> getCore(){
-       return null;
+       return core;
     }
 
     public List<Vertex> getForest(){
-        return null;
+        return forest;
     }
 
     public List<Vertex> getLeaf (){
-        return null;
+        return leaf;
     }
 
     public List<Vertex> getQueryGraph(){
@@ -125,7 +126,7 @@ public class QueryGraph {
         }
     }
 
-    void addEdge(int id1, int id2){
+    private void addEdge(int id1, int id2){
         //As per our input vertices are created before edges are crated so we will always have
         //a vertex present
         Vertex v1 = SearchQueryVertices.get(id1);
@@ -133,7 +134,7 @@ public class QueryGraph {
         v1.addNeighbor(v2);
     }
 
-    void addVertex(int id,String label, String name){
+    private void addVertex(int id,String label, String name){
         Vertex v = new Vertex(id,label,name);
         SearchQueryVertices.put(id,v);
     }

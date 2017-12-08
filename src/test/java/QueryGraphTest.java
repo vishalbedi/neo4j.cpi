@@ -13,6 +13,6 @@ public class QueryGraphTest {
 
     @Test
     public void generateQueryGraph() {
-        queryGraph.generateQueryGraph(queryFile,targetFilename);
+        queryGraph.getCore();
     }
 }

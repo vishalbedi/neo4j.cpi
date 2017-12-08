@@ -1,19 +1,21 @@
-import org.neo4j.graphdb.Direction;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CPI {
 
     private final ApplicationProperties applicationProperties;
     private QueryGraph queryGraph;
+    private GraphDatabaseService db;
 
-    public CPI(ApplicationProperties applicationProperties, QueryGraph queryGraph){
+    public CPI(ApplicationProperties applicationProperties, QueryGraph queryGraph, GraphDatabaseService db){
         this.applicationProperties = applicationProperties;
         this.queryGraph = queryGraph;
+        this.db = db;
     }
 
     public boolean candVerify(Node v, Vertex u){
@@ -44,5 +46,43 @@ public class CPI {
             }
         }
         return max;
+    }
+
+    public void rootSelection(){
+        List<Vertex> core = queryGraph.getCore();
+        System.out.println(core.size());
+        Vertex root = _rootSelection(core);
+        System.out.println("root "+root.getLabel());
+    }
+
+    private Vertex _rootSelection(List<Vertex> core){
+
+        if(core.size() == 1)
+            return core.get(0);
+        else{
+            Map<Vertex, List<Node>> candidatesList = new HashMap<>();
+
+            for(Vertex v : core){
+                List<Node> candidates_v = new ArrayList<>();
+                ResourceIterator<Node> iterator = db.findNodes(Label.label(v.getLabel()));
+                while(iterator.hasNext()){
+                    Node n = iterator.next();
+                    if(candVerify(n, v)){
+                        candidates_v.add(n);
+                    }
+                }
+                candidatesList.put(v, candidates_v);
+            }
+
+            double arg_min = Double.MAX_VALUE;
+            Vertex root = null;
+            for(Vertex v : candidatesList.keySet()){
+                if ((candidatesList.get(v).size() / v.getDegree()) < arg_min ){
+                    arg_min = (candidatesList.get(v).size() / v.getDegree());
+                    root = v;
+                }
+            }
+            return root;
+        }
     }
 }

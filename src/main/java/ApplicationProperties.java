@@ -11,6 +11,7 @@ public class ApplicationProperties {
     private final String DEFAULTQUERYPATH ="/home/vishal/dev/courses/CSCI729/HW4/Proteins";
     private final String DEFAULTGROUNDTRUTHPATH = "/home/vishal/dev/courses/CSCI729/HW4/Proteins";
 
+
     public ApplicationProperties(String fileName) {
         try {
             input = getClass().getClassLoader().getResourceAsStream(fileName);
