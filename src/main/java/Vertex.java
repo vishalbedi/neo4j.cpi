@@ -7,12 +7,16 @@ public class Vertex {
     private String name;
     private List<Vertex> connectedTo;
     private boolean visited = false;
+    private List<Vertex> N = null;
+    private List<Vertex> UN = null;
 
     Vertex(int id, String label, String name){
         this.id = id;
         this.label = label;
         this.name = name;
         connectedTo = new ArrayList<>();
+        N = new ArrayList<>();
+        UN = new ArrayList<>();
     }
 
     Vertex(int id, String label){
@@ -45,6 +49,10 @@ public class Vertex {
     }
 
     public boolean getVisited(){ return visited; }
+
+    public void addUN(Vertex v){
+        UN.add(v);
+    }
 
 
 

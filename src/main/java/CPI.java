@@ -95,13 +95,43 @@ public class CPI {
         List<Node> rootCandidates = candidateComputation(root);
         root.setVisited(true);
         Map<Integer, List<Vertex>> levelTree = queryGraph.getLevelTree(root);
-        for (int i : levelTree.keySet()){
-            for( Vertex v : levelTree.get(i)){
-                System.out.print(v.getId() +"  ");
+        addCountAttribute();
+        for(int level = 2; level < levelTree.size()+1; level++){
+            for (Vertex level_u : levelTree.get(level)){
+                int COUNT = 0;
+                for(Vertex neighbor_u : level_u.getConnections()){
+                    if(!neighbor_u.getVisited() && levelTree.get(level).contains(neighbor_u)){
+                        level_u.addUN(neighbor_u);
+                    }
+                    else if(neighbor_u.getVisited()){
+                        List<Node> candidates_v_of_neighbor_u = candidateComputation(neighbor_u);
+                        for (Node v_dash : candidates_v_of_neighbor_u){
+                            List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u);
+                        }
+                    }
+                }
             }
-            System.out.println();
         }
+    }
 
+    private void addCountAttribute(){
+        try ( Transaction tx = db.beginTx() ){
+           for(Node n: db.getAllNodes()){
+               n.setProperty("cnt",0);
+           }
+           tx.success();
+        }
+    }
+
+    private List<Node> getQualifyingNodes(Node v_dash, Vertex level_u){
+        List<Node> qualifyingNodes = new ArrayList<>();
+        for(Relationship r : v_dash.getRelationships(Direction.INCOMING)){
+            Node neighbor = r.getOtherNode(v_dash);
+            if (neighbor.getLabels().iterator().next().equals(level_u.getLabel()) && (neighbor.getDegree(Direction.INCOMING) >= level_u.getDegree())){
+               qualifyingNodes.add(neighbor);
+            }
+        }
+        return qualifyingNodes;
     }
 
 }
