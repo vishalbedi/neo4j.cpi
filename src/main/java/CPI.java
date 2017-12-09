@@ -82,6 +82,7 @@ public class CPI {
     private List<Node> candidateComputation(Vertex v){
         List<Node> candidates_v = new ArrayList<>();
         ResourceIterator<Node> iterator = db.findNodes(Label.label(v.getLabel()));
+
         while(iterator.hasNext()){
             Node n = iterator.next();
             if(candVerify(n, v)){
@@ -107,6 +108,7 @@ public class CPI {
                         List<Node> candidates_v_of_neighbor_u = candidateComputation(neighbor_u);
                         for (Node v_dash : candidates_v_of_neighbor_u){
                             List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u);
+                            // increment the count of each qualifying node
                         }
                     }
                 }
@@ -133,5 +135,4 @@ public class CPI {
         }
         return qualifyingNodes;
     }
-
 }
