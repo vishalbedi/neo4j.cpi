@@ -164,8 +164,6 @@ public class CPI {
             }
             addCountAttribute();//reset count to zero
         }
-
-
     }
 
     private List<Node> getNodesWithCount(int count){
@@ -191,7 +189,6 @@ public class CPI {
         List<Node> qualifyingNodes = new ArrayList<>();
         for(Relationship r : v_dash.getRelationships(Direction.INCOMING)){
             Node neighbor = r.getOtherNode(v_dash);
-//            neighbor.getLabels().forEach(label -> label.name().equals());
             if (neighbor.getLabels().iterator().next().name().equals(level_u.getLabel()) && (neighbor.getDegree(Direction.INCOMING) >= level_u.getDegree())){
                qualifyingNodes.add(neighbor);
             }
