@@ -13,6 +13,7 @@ public class Vertex {
     private List<Vertex> N = null;
     private List<Vertex> UN = null;
     private List<Node> candidateNodes = null;
+    private Vertex parent = null;
 
     Vertex(int id, String label, String name){
         this.id = id;
@@ -28,6 +29,9 @@ public class Vertex {
         this.id = id;
         this.label = label;
         connectedTo = new ArrayList<>();
+        N = new ArrayList<>();
+        UN = new ArrayList<>();
+        candidateNodes = new ArrayList<>();
     }
 
     Vertex(Vertex vertex){
@@ -35,6 +39,17 @@ public class Vertex {
         this.label = vertex.getLabel();
         this.name = vertex.getName();
         connectedTo = new ArrayList<>();
+        N = new ArrayList<>();
+        UN = new ArrayList<>();
+        candidateNodes = new ArrayList<>();
+    }
+
+    public void setParent(Vertex parent) {
+        this.parent = parent;
+    }
+
+    public Vertex getParent(){
+        return this.parent;
     }
 
     public List<Node> getCandidateNodes() {

@@ -165,10 +165,10 @@ public class QueryGraph {
         Map<Integer, List<Vertex>> levelTree = new HashMap<>();
         int level = 1;
         List<Vertex> levelVertices = new ArrayList<>();
-        levelVertices.add(SearchQueryVertices.get(root.getId()));
+        levelVertices.add(root);
         levelTree.put(1, levelVertices);
         Set<Vertex> visited = new HashSet<>();
-        visited.add(SearchQueryVertices.get(root.getId()));
+        visited.add(root);
         while(visited.size() != SearchQueryVertices.size()){
             level+=1;
             List<Vertex> children = new ArrayList<>();
@@ -177,6 +177,7 @@ public class QueryGraph {
                     if(!visited.contains(n)){
                         visited.add(n);
                         children.add(n);
+                        n.setParent(p);
                     }
                 }
             }

@@ -21,18 +21,25 @@ public class CPI {
     public boolean candVerify(Node v, Vertex u){
         if (maxNeighborNode(v) < u.maxNeighborDegree() )
             return false;
-
-        List<Node> neighbors = new ArrayList<>();
-        for(Relationship r : v.getRelationships(Direction.INCOMING)){
-            Node neighbor = r.getOtherNode(v);
-            neighbors.add(neighbor);
-        }
-        for (Node n : neighbors){
-            List<String> u_neighbors = u.getConnections().stream().map(vertex -> vertex.getLabel()).collect(Collectors.toList());
-            if ( u_neighbors.contains(n.getLabels().iterator().next()) ){
-                if(n.getDegree(Direction.INCOMING) < u.getDegree())
-                    return false;
+        List<String> u_neighbors = u.getConnections().stream().map(vertex -> vertex.getLabel())
+                .collect(Collectors.toList());
+        for (String label :
+                u_neighbors) {
+            int v_neighbor_with_label_count = 0;
+            int u_neighbor_with_label_count = 0;
+            for(Relationship r : v.getRelationships(Direction.INCOMING)){
+                Node neighbor = r.getOtherNode(v);
+                if(neighbor.getLabels().iterator().next().name().equals(label))
+                    v_neighbor_with_label_count++;
             }
+            for (Vertex nu :
+                    u.getConnections()) {
+                if(nu.getLabel().equals(label))
+                    u_neighbor_with_label_count++;
+            }
+
+            if(v_neighbor_with_label_count<u_neighbor_with_label_count)
+                return false;
         }
         return true;
     }
@@ -57,26 +64,24 @@ public class CPI {
     }
 
     private Vertex _rootSelection(List<Vertex> core){
-
+        Vertex root= null;
         if(core.size() == 1)
-            return core.get(0);
+            root = core.get(0);
         else{
             Map<Vertex, List<Node>> candidatesList = new HashMap<>();
-
             for(Vertex v : core){
                 candidatesList.put(v, candidateComputation(v));
             }
-
             double arg_min = Double.MAX_VALUE;
-            Vertex root = null;
             for(Vertex v : candidatesList.keySet()){
                 if ((candidatesList.get(v).size() / v.getDegree()) < arg_min ){
                     arg_min = (candidatesList.get(v).size() / v.getDegree());
                     root = v;
                 }
             }
-            return root;
         }
+        // forward the root of complete query graph and not core
+        return queryGraph.SearchQueryVertices.get(root.getId());
     }
 
     private List<Node> candidateComputation(Vertex v){
@@ -106,17 +111,20 @@ public class CPI {
                         level_u.addUN(neighbor_u);
                     }
                     else if(neighbor_u.getVisited()){
-                        List<Node> candidates_v_of_neighbor_u = candidateComputation(neighbor_u);
-                        for (Node v_dash : candidates_v_of_neighbor_u){
-                            List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u);
-                            for (Node v: qualifyingNodes) {
-                                int v_count = (int)v.getProperty("cnt");
-                                if(v_count == COUNT){
-                                    v.setProperty("cnt", v_count+1);
+                        try ( Transaction tx = db.beginTx() ){
+                            List<Node> candidates_v_of_neighbor_u = candidateComputation(neighbor_u);
+                            for (Node v_dash : candidates_v_of_neighbor_u){
+                                List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u);
+                                for (Node v: qualifyingNodes) {
+                                    int v_count = (int)v.getProperty("cnt");
+                                    if(v_count == COUNT){
+                                        v.setProperty("cnt", v_count+1);
+                                    }
                                 }
                             }
+                            tx.success();
+                            COUNT++;
                         }
-                        COUNT++;
                     }
                 }
                 for (Node node:
@@ -129,21 +137,23 @@ public class CPI {
                 addCountAttribute();//reset count to zero
             }
             List<Vertex> levelVertices = levelTree.get(level);
-            for (int i = levelVertices.size(); i >=0 ; i-- ){
+            for (int i = levelVertices.size()-1; i >=0 ; i-- ){
                 Vertex u = levelVertices.get(i);
                 int COUNT = 0;
                 for(Vertex u_dash : u.getUN()){
-                    for (Node v_dash: u_dash.getCandidateNodes()) {
-                        List<Node> qualifyingNodes = getQualifyingNodes(v_dash,u);
-                        for (Node v :
-                                qualifyingNodes) {
-                            int v_count = (int) v.getProperty("cnt");
-                            if (v_count == COUNT) {
-                                v.setProperty("cnt", v_count + 1);
+                    try(Transaction tx = db.beginTx()) {
+                        for (Node v_dash: u_dash.getCandidateNodes()) {
+                            List<Node> qualifyingNodes = getQualifyingNodes(v_dash,u);
+                            for (Node v : qualifyingNodes) {
+                                int v_count = (int) v.getProperty("cnt");
+                                if (v_count == COUNT) {
+                                    v.setProperty("cnt", v_count + 1);
+                                }
                             }
                         }
+                        tx.success();
+                        COUNT++;
                     }
-                    COUNT++;
                 }
                 for (Node v :
                         u.getCandidateNodes()) {
@@ -154,6 +164,8 @@ public class CPI {
             }
             addCountAttribute();//reset count to zero
         }
+
+
     }
 
     private List<Node> getNodesWithCount(int count){
@@ -165,6 +177,7 @@ public class CPI {
         }
         return candidates;
     }
+
     private void addCountAttribute(){
         try ( Transaction tx = db.beginTx() ){
            for(Node n: db.getAllNodes()){
@@ -178,7 +191,8 @@ public class CPI {
         List<Node> qualifyingNodes = new ArrayList<>();
         for(Relationship r : v_dash.getRelationships(Direction.INCOMING)){
             Node neighbor = r.getOtherNode(v_dash);
-            if (neighbor.getLabels().iterator().next().equals(level_u.getLabel()) && (neighbor.getDegree(Direction.INCOMING) >= level_u.getDegree())){
+//            neighbor.getLabels().forEach(label -> label.name().equals());
+            if (neighbor.getLabels().iterator().next().name().equals(level_u.getLabel()) && (neighbor.getDegree(Direction.INCOMING) >= level_u.getDegree())){
                qualifyingNodes.add(neighbor);
             }
         }
