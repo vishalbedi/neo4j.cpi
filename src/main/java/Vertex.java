@@ -1,3 +1,5 @@
+import org.neo4j.graphdb.Node;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +11,7 @@ public class Vertex {
     private boolean visited = false;
     private List<Vertex> N = null;
     private List<Vertex> UN = null;
+    private List<Node> candidateNodes = null;
 
     Vertex(int id, String label, String name){
         this.id = id;
@@ -17,6 +20,7 @@ public class Vertex {
         connectedTo = new ArrayList<>();
         N = new ArrayList<>();
         UN = new ArrayList<>();
+        candidateNodes = new ArrayList<>();
     }
 
     Vertex(int id, String label){
@@ -30,6 +34,18 @@ public class Vertex {
         this.label = vertex.getLabel();
         this.name = vertex.getName();
         connectedTo = new ArrayList<>();
+    }
+
+    public List<Node> getCandidateNodes() {
+        return candidateNodes;
+    }
+
+    public void addCandidateNode(Node n){
+        candidateNodes.add(n);
+    }
+
+    public void addCandidateNodes(List<Node> nodes){
+        candidateNodes.addAll(nodes);
     }
 
     public String getName() {

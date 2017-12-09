@@ -95,6 +95,7 @@ public class CPI {
     private void computeCPI (Vertex root){
         List<Node> rootCandidates = candidateComputation(root);
         root.setVisited(true);
+        root.addCandidateNodes(rootCandidates);
         Map<Integer, List<Vertex>> levelTree = queryGraph.getLevelTree(root);
         addCountAttribute();
         for(int level = 2; level < levelTree.size()+1; level++){
@@ -108,14 +109,37 @@ public class CPI {
                         List<Node> candidates_v_of_neighbor_u = candidateComputation(neighbor_u);
                         for (Node v_dash : candidates_v_of_neighbor_u){
                             List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u);
-                            // increment the count of each qualifying node
+                            for (Node v: qualifyingNodes) {
+                                int v_count = (int)v.getProperty("cnt");
+                                if(v_count == COUNT){
+                                    v.setProperty("cnt",v_count+1);
+                                }
+                            }
                         }
+                        COUNT++;
                     }
                 }
+                for (Node node:
+                     getNodesWithCount(COUNT)) {
+                    if(candVerify(node,level_u)){
+                        level_u.addCandidateNode(node);
+                    }
+                }
+                level_u.setVisited(true);
+                addCountAttribute();//reset count to zero
             }
         }
     }
 
+    private List<Node> getNodesWithCount(int count){
+        List<Node> candidates = new ArrayList<>();
+        for (Node n:
+                db.getAllNodes()) {
+            if((int)n.getProperty("cnt") == count)
+                candidates.add(n);
+        }
+        return candidates;
+    }
     private void addCountAttribute(){
         try ( Transaction tx = db.beginTx() ){
            for(Node n: db.getAllNodes()){
