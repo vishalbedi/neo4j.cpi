@@ -1,3 +1,4 @@
+import org.neo4j.cypher.internal.compiler.v2_3.No;
 import org.neo4j.graphdb.Node;
 
 import java.util.ArrayList;
@@ -70,7 +71,13 @@ public class Vertex {
         UN.add(v);
     }
 
+    public List<Vertex> getUN() {
+        return UN;
+    }
 
+    public void removeCandidateNode(Node n){
+        candidateNodes.remove(n);
+    }
 
     public int getDegree(){
         return connectedTo.size();

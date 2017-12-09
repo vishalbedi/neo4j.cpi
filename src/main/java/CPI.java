@@ -112,7 +112,7 @@ public class CPI {
                             for (Node v: qualifyingNodes) {
                                 int v_count = (int)v.getProperty("cnt");
                                 if(v_count == COUNT){
-                                    v.setProperty("cnt",v_count+1);
+                                    v.setProperty("cnt", v_count+1);
                                 }
                             }
                         }
@@ -128,6 +128,31 @@ public class CPI {
                 level_u.setVisited(true);
                 addCountAttribute();//reset count to zero
             }
+            List<Vertex> levelVertices = levelTree.get(level);
+            for (int i = levelVertices.size(); i >=0 ; i-- ){
+                Vertex u = levelVertices.get(i);
+                int COUNT = 0;
+                for(Vertex u_dash : u.getUN()){
+                    for (Node v_dash: u_dash.getCandidateNodes()) {
+                        List<Node> qualifyingNodes = getQualifyingNodes(v_dash,u);
+                        for (Node v :
+                                qualifyingNodes) {
+                            int v_count = (int) v.getProperty("cnt");
+                            if (v_count == COUNT) {
+                                v.setProperty("cnt", v_count + 1);
+                            }
+                        }
+                    }
+                    COUNT++;
+                }
+                for (Node v :
+                        u.getCandidateNodes()) {
+                    int v_count = (int) v.getProperty("cnt");
+                    if (v_count != COUNT)
+                        u.removeCandidateNode(v);
+                }
+            }
+            addCountAttribute();//reset count to zero
         }
     }
 
