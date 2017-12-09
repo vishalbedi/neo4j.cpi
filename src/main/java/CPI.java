@@ -198,4 +198,8 @@ public class CPI {
         }
         return qualifyingNodes;
     }
+
+    private void addProperty (){
+
+    }
 }
