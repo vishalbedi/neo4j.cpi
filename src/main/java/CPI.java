@@ -113,6 +113,7 @@ public class CPI {
     }
 
     private void deleteCPINodes(){
+        //Cypher : MATCH (n:CPI) OPTIONAL MATCH (n)-[r]-() DELETE n,r
         try(Transaction tx = db.beginTx()) {
             ResourceIterator<Node> iter = db.findNodes(Label.label("CPI"));
             while (iter.hasNext()) {
