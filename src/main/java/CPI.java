@@ -144,8 +144,7 @@ public class CPI {
 
     private void adjacencyListCreation(Map<Integer, List<Vertex>> levelTree, int level) {
         try (Transaction tx = db.beginTx()){
-            for (Vertex u :
-                    levelTree.get(level)) {
+            for (Vertex u : levelTree.get(level)) {
                 Vertex Up = u.getParent();
                 for(Node vp : Up.getCandidateNodes()){
                     int vpId = (int)vp.getProperty("id");
@@ -320,7 +319,7 @@ public class CPI {
                             Label labelName = v.getLabels().iterator().next();
                             int idValue = (int) v.getProperty("id");
                             Node CPINode = db.findNode(labelName, "id", idValue);
-                            //deleteNode(CPINode);  delete all adjacency lists of v from CPI
+                            //deleteRelationship(CPINode);  delete all adjacency lists of v from CPI
                     }
                     addCountAttribute();        // reset cnt to 0
                     candidates_of_levelNodeVertex.clear();
@@ -343,12 +342,11 @@ public class CPI {
         }
     }
 
-    private void deleteNode(Node node){
+    private void deleteRelationship(Node node){
         try(Transaction tx = db.beginTx()) {
             for (Relationship r : node.getRelationships(Direction.INCOMING)) {
                 r.delete();
             }
-            node.delete();
             tx.success();
             tx.close();
         }
