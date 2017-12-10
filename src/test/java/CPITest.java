@@ -28,6 +28,9 @@ public class CPITest {
         System.out.println("query file = "+queryFile.getName());
         try ( Transaction tx = db.beginTx() ){
             cpi.rootSelection();
+            tx.success();
+            tx.close();
         }
+
     }
 }
