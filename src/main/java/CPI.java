@@ -109,6 +109,22 @@ public class CPI {
             backwardCandidatePruning(levelTree, level);
             adjacencyListCreation(levelTree, level);
         }
+        deleteCPINodes();
+    }
+
+    private void deleteCPINodes(){
+        try(Transaction tx = db.beginTx()) {
+            ResourceIterator<Node> iter = db.findNodes(Label.label("CPI"));
+            while (iter.hasNext()) {
+                Node node = iter.next();
+                for (Relationship r : node.getRelationships(Direction.INCOMING)) {
+                    r.delete();
+                }
+                node.delete();
+            }
+            tx.success();
+            tx.close();
+        }
     }
 
     private void addCpiRootNodes(List<Node> rootCandidates, Vertex u){
