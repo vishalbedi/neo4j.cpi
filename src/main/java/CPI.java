@@ -109,6 +109,7 @@ public class CPI {
             backwardCandidatePruning(levelTree, level);
             adjacencyListCreation(levelTree, level);
         }
+        bottomUpRefinement(levelTree);
         deleteCPINodes();
     }
 
@@ -152,8 +153,7 @@ public class CPI {
                     if(cpiVp == null)
                         continue;
                     List<Node> qualifyingNodes = getQualifyingNodes(vp, u, false);
-                    for (Node v :
-                            qualifyingNodes) {
+                    for (Node v : qualifyingNodes) {
                         if(u.getCandidateNodes().contains(v)){
                             int id = (int)v.getProperty("id");
                             Node cpiV = createCPINode(u.getLabel(), u.getName(), id, level, u.getId());
@@ -284,4 +284,74 @@ public class CPI {
         }
         return qualifyingNodes;
     }
+
+    private void bottomUpRefinement(Map<Integer, List<Vertex>> levelTree){
+        for(int level = levelTree.size(); level >0; level--){
+            List<Vertex>  levelNodes = levelTree.get(level);
+            int COUNT = 0;
+            if(level == levelTree.size())
+                continue;
+            else {
+                for(Vertex levelNodesVertex : levelNodes){
+                    List<Vertex> lowerLevel = levelTree.get(level+1);
+                    for(Vertex lowerLevelVertex : lowerLevel) {
+                        if (levelNodesVertex.getConnections().contains(lowerLevelVertex)) {
+                            try (Transaction tx = db.beginTx()) {
+                                List<Node> candidates_v_of_neighbor_u = candidateComputation(lowerLevelVertex);
+                                for (Node v_dash : candidates_v_of_neighbor_u) {
+                                    List<Node> qualifyingNodes = getQualifyingNodes(v_dash, levelNodesVertex, true);
+                                    for (Node v : qualifyingNodes) {
+                                        int v_count = (int) v.getProperty("cnt");
+                                        if (v_count == COUNT) {
+                                            v.setProperty("cnt", v_count + 1);
+                                        }
+                                    }
+                                }
+                                tx.success();
+                                tx.close();
+                                COUNT++;
+                            }
+                        }
+                    }
+                    List<Node> candidates_of_levelNodeVertex = candidateComputation(levelNodesVertex);
+                    for (Node v : candidates_of_levelNodeVertex){
+                            int finalCount = COUNT;
+                            candidates_of_levelNodeVertex.removeIf(node -> (int)v.getProperty("cnt")!= finalCount);
+                            Label labelName = v.getLabels().iterator().next();
+                            int idValue = (int) v.getProperty("id");
+                            Node CPINode = db.findNode(labelName, "id", idValue);
+                            //deleteNode(CPINode);  delete all adjacency lists of v from CPI
+                    }
+                    addCountAttribute();        // reset cnt to 0
+                    candidates_of_levelNodeVertex.clear();
+                    candidates_of_levelNodeVertex = candidateComputation(levelNodesVertex);
+                    for(Node v : candidates_of_levelNodeVertex){
+                        List<Vertex> lowerLevelVertices = levelTree.get(level+1);
+                        for(Vertex lowerLevelVertex : lowerLevelVertices) {
+                            if (levelNodesVertex.getConnections().contains(lowerLevelVertex)) {
+
+                            }
+
+                        }
+
+                    }
+
+
+                }
+
+            }
+        }
+    }
+
+    private void deleteNode(Node node){
+        try(Transaction tx = db.beginTx()) {
+            for (Relationship r : node.getRelationships(Direction.INCOMING)) {
+                r.delete();
+            }
+            node.delete();
+            tx.success();
+            tx.close();
+        }
+    }
+
 }
