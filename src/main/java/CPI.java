@@ -119,6 +119,7 @@ public class CPI {
                 u.addCpiCandidateNode(id, cpiNode);
             }
             tx.success();
+            tx.close();
         }
     }
 
@@ -146,6 +147,7 @@ public class CPI {
                 }
             }
             tx.success();
+            tx.close();
         }
     }
 
@@ -177,6 +179,7 @@ public class CPI {
                         }
                     }
                     tx.success();
+                    tx.close();
                     COUNT++;
                 }
             }
@@ -207,6 +210,7 @@ public class CPI {
                             }
                         }
                         tx.success();
+                        tx.close();
                         COUNT++;
                     }
                 }
@@ -246,7 +250,8 @@ public class CPI {
                     n.setProperty("cnt",0);
                 }
             }
-           tx.success();
+            tx.success();
+            tx.close();
         }
     }
 
