@@ -180,13 +180,9 @@ public class CPI {
                     COUNT++;
                 }
             }
-            for (Node v :
-                    u.getCandidateNodes()) {
-                int v_count = (int) v.getProperty("cnt");
-                if (v_count != COUNT){
-                    u.removeCandidateNode(v);
-                }
-            }
+            int finalCOUNT = COUNT;
+            u.getCandidateNodes().removeIf(node -> (int) node.getProperty("cnt") != finalCOUNT);
+
         }
         addCountAttribute();//reset count to zero
     }
