@@ -98,20 +98,26 @@ public class CPI {
     }
 
     private void computeCPI (Vertex root){
+        Map<Integer, List<Vertex>> levelTree = queryGraph.getLevelTree(root);
+        topDownConstruction(root,levelTree);
+        bottomUpRefinement(levelTree);
+        //deleteCPINodes();
+    }
+
+
+    private void topDownConstruction(Vertex root, Map<Integer, List<Vertex>> levelTree){
         List<Node> rootCandidates = candidateComputation(root);
         root.setVisited(true);
         root.addCandidateNodes(rootCandidates);
         addCpiRootNodes(rootCandidates,root);
-        Map<Integer, List<Vertex>> levelTree = queryGraph.getLevelTree(root);
         addCountAttribute();
         for(int level = 2; level < levelTree.size()+1; level++){
             forwardCandidateGeneration(levelTree, level);
             backwardCandidatePruning(levelTree, level);
             adjacencyListCreation(levelTree, level);
         }
-        bottomUpRefinement(levelTree);
-        deleteCPINodes();
     }
+
 
     private void deleteCPINodes(){
         //Cypher : MATCH (n:CPI) OPTIONAL MATCH (n)-[r]-() DELETE n,r
@@ -119,7 +125,7 @@ public class CPI {
             ResourceIterator<Node> iter = db.findNodes(Label.label("CPI"));
             while (iter.hasNext()) {
                 Node node = iter.next();
-                for (Relationship r : node.getRelationships(Direction.INCOMING)) {
+                for (Relationship r : node.getRelationships(Direction.BOTH)) {
                     r.delete();
                 }
                 node.delete();
@@ -185,20 +191,7 @@ public class CPI {
             Vertex u = levelVertices.get(i);
             int COUNT = 0;
             for(Vertex u_dash : u.getUN()){
-                try(Transaction tx = db.beginTx()) {
-                    for (Node v_dash: u_dash.getCandidateNodes()) {
-                        List<Node> qualifyingNodes = getQualifyingNodes(v_dash,u, true);
-                        for (Node v : qualifyingNodes) {
-                            int v_count = (int) v.getProperty("cnt");
-                            if (v_count == COUNT) {
-                                v.setProperty("cnt", v_count + 1);
-                            }
-                        }
-                    }
-                    tx.success();
-                    tx.close();
-                    COUNT++;
-                }
+                COUNT = candidateNeighborFilter(u, COUNT, u_dash);
             }
             int finalCOUNT = COUNT;
             u.getCandidateNodes().removeIf(node -> (int) node.getProperty("cnt") != finalCOUNT);
@@ -210,26 +203,12 @@ public class CPI {
     private void forwardCandidateGeneration(Map<Integer, List<Vertex>> levelTree, int level) {
         for (Vertex level_u : levelTree.get(level)){
             int COUNT = 0;
-            for(Vertex neighbor_u : level_u.getConnections()){
-                if(!neighbor_u.getVisited() && levelTree.get(level).contains(neighbor_u)){
-                    level_u.addUN(neighbor_u);
+            for(Vertex u_dash : level_u.getConnections()){
+                if(!u_dash.getVisited() && levelTree.get(level).contains(u_dash)){
+                    level_u.addUN(u_dash);
                 }
-                else if(neighbor_u.getVisited()){
-                    try ( Transaction tx = db.beginTx() ){
-                        List<Node> candidates_v_of_neighbor_u = candidateComputation(neighbor_u);
-                        for (Node v_dash : candidates_v_of_neighbor_u){
-                            List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u, true);
-                            for (Node v: qualifyingNodes) {
-                                int v_count = (int)v.getProperty("cnt");
-                                if(v_count == COUNT){
-                                    v.setProperty("cnt", v_count+1);
-                                }
-                            }
-                        }
-                        tx.success();
-                        tx.close();
-                        COUNT++;
-                    }
+                else if(u_dash.getVisited()){
+                    COUNT = candidateNeighborFilter(level_u, COUNT, u_dash);
                 }
             }
             for (Node node:
@@ -241,6 +220,24 @@ public class CPI {
             level_u.setVisited(true);
             addCountAttribute();//reset count to zero
         }
+    }
+
+    private int candidateNeighborFilter(Vertex level_u, int COUNT, Vertex u_dash) {
+        try ( Transaction tx = db.beginTx() ){
+            for (Node v_dash : u_dash.getCandidateNodes()){
+                List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u, true);
+                for (Node v: qualifyingNodes) {
+                    int v_count = (int)v.getProperty("cnt");
+                    if(v_count == COUNT){
+                        v.setProperty("cnt", v_count+1);
+                    }
+                }
+            }
+            tx.success();
+            tx.close();
+            COUNT++;
+        }
+        return COUNT;
     }
 
     private List<Node> getNodesWithCount(int count){
@@ -284,72 +281,71 @@ public class CPI {
         return qualifyingNodes;
     }
 
+
     private void bottomUpRefinement(Map<Integer, List<Vertex>> levelTree){
-        for(int level = levelTree.size(); level >0; level--){
-            List<Vertex>  levelNodes = levelTree.get(level);
-            int COUNT = 0;
+        for(int level = levelTree.size(); level >0 ; level--){
             if(level == levelTree.size())
                 continue;
-            else {
-                for(Vertex levelNodesVertex : levelNodes){
-                    List<Vertex> lowerLevel = levelTree.get(level+1);
-                    for(Vertex lowerLevelVertex : lowerLevel) {
-                        if (levelNodesVertex.getConnections().contains(lowerLevelVertex)) {
-                            try (Transaction tx = db.beginTx()) {
-                                List<Node> candidates_v_of_neighbor_u = candidateComputation(lowerLevelVertex);
-                                for (Node v_dash : candidates_v_of_neighbor_u) {
-                                    List<Node> qualifyingNodes = getQualifyingNodes(v_dash, levelNodesVertex, true);
-                                    for (Node v : qualifyingNodes) {
-                                        int v_count = (int) v.getProperty("cnt");
-                                        if (v_count == COUNT) {
-                                            v.setProperty("cnt", v_count + 1);
+            for(Vertex u : levelTree.get(level)){
+                int COUNT = 0;
+                for(Vertex u_dash : levelTree.get(level+1)) {
+                    if (u.getConnections().contains(u_dash)) {
+                        COUNT = candidateNeighborFilter(u, COUNT, u_dash);
+                    }
+                }
+                List<Node> candidates_of_u = u.getCandidateNodes();
+
+                int finalCount = COUNT;
+                candidates_of_u.removeIf(node -> (int) node.getProperty("cnt") != finalCount);
+
+                addCountAttribute();        // reset cnt to 0
+                for(Node v : candidates_of_u){
+                    for(Vertex u_dash : levelTree.get(level+1)) {
+                        if (u_dash.getParent().getId() == u.getId()) {
+                            List<Integer> u_dashCandidateIds = u_dash.getCandidateNodes()
+                                    .stream().map(node -> (int)node.getProperty("id")).collect(Collectors.toList());
+                            try(Transaction tx = db.beginTx()){
+                                for (Node v_dash :
+                                        getCpiAdjacencyList(v, u, u_dash)) {
+                                    int v_dashId = (int) v_dash.getProperty("id");
+                                    if(!u_dashCandidateIds.contains(v_dashId)){
+                                        for (Relationship r : v_dash.getRelationships(Direction.BOTH)) {
+                                            r.delete();
                                         }
+                                        v_dash.delete();
                                     }
                                 }
                                 tx.success();
                                 tx.close();
-                                COUNT++;
                             }
                         }
                     }
-                    List<Node> candidates_of_levelNodeVertex = candidateComputation(levelNodesVertex);
-                    for (Node v : candidates_of_levelNodeVertex){
-                            int finalCount = COUNT;
-                            candidates_of_levelNodeVertex.removeIf(node -> (int)v.getProperty("cnt")!= finalCount);
-                            Label labelName = v.getLabels().iterator().next();
-                            int idValue = (int) v.getProperty("id");
-                            Node CPINode = db.findNode(labelName, "id", idValue);
-                            //deleteRelationship(CPINode);  delete all adjacency lists of v from CPI
-                    }
-                    addCountAttribute();        // reset cnt to 0
-                    candidates_of_levelNodeVertex.clear();
-                    candidates_of_levelNodeVertex = candidateComputation(levelNodesVertex);
-                    for(Node v : candidates_of_levelNodeVertex){
-                        List<Vertex> lowerLevelVertices = levelTree.get(level+1);
-                        for(Vertex lowerLevelVertex : lowerLevelVertices) {
-                            if (levelNodesVertex.getConnections().contains(lowerLevelVertex)) {
-
-                            }
-
-                        }
-
-                    }
-
-
                 }
-
             }
         }
     }
 
-    private void deleteRelationship(Node node){
-        try(Transaction tx = db.beginTx()) {
-            for (Relationship r : node.getRelationships(Direction.INCOMING)) {
-                r.delete();
-            }
-            tx.success();
-            tx.close();
-        }
-    }
 
+    private List<Node> getCpiAdjacencyList(Node v, Vertex u, Vertex u_dash){
+        List<Node> adjacencyListV = new ArrayList<>();
+        int id = (int) v.getProperty("id");
+        ResourceIterator<Node> itrIterator = db.findNodes(Label.label("CPI"), "id", id);
+        Node cpiV = null;
+        while (itrIterator.hasNext()){
+            Node node = itrIterator.next();
+            if((int)node.getProperty("candidateOf") == u.getId()){
+                cpiV = node;
+                break;
+            }
+        }
+        if(cpiV == null)
+            return  adjacencyListV;
+        for (Relationship r :
+                cpiV.getRelationships(Direction.INCOMING)) {
+            Node otherNode = r.getOtherNode(cpiV);
+            if(!adjacencyListV.contains(otherNode) && (int)otherNode.getProperty("candidateOf") == u_dash.getId())
+                adjacencyListV.add(otherNode);
+        }
+        return adjacencyListV;
+    }
 }
