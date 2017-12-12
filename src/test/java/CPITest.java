@@ -11,7 +11,7 @@ public class CPITest {
 
     String validFileName = "config.properties";
     ApplicationProperties applicationProperties = new ApplicationProperties(validFileName);
-    FileHelper fileHelper = new FileHelper(applicationProperties);
+    FileHelper fileHelper = new FileHelper();
     File queryFile = fileHelper.getAllFileNames(applicationProperties.ProteinsQueryPath(),8).collect(Collectors.toList()).get(3);
     String targetFilename = "backbones_1AF7";
     QueryGraph queryGraph = new QueryGraph(applicationProperties, queryFile, fileHelper, targetFilename);
@@ -22,7 +22,7 @@ public class CPITest {
     setConfig(GraphDatabaseSettings.array_block_size, "300" ).
     newGraphDatabase();
 
-    CPI cpi = new CPI(applicationProperties, queryGraph, db);
+    CPI cpi = new CPI(queryGraph, db);
     @Test
     public void rootSelection() {
         System.out.println("query file = "+queryFile.getName());

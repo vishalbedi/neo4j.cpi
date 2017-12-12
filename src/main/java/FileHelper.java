@@ -8,17 +8,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Class that handles File operations
+ */
 class FileHelper {
-    private ApplicationProperties prop;
-
-    /**
-     * Class that handles File operations
-     * @param properties Instance of ApplicationProperties
-     */
-    FileHelper(ApplicationProperties properties) {
-        this.prop = properties;
-
-    }
 
     /**
      * Reads the file which has the subgraph text
@@ -47,7 +40,7 @@ class FileHelper {
     Stream<File> getAllFileNames(String path){
         File folder = new File(path);
         File[] files = folder.listFiles();
-        return Stream.of(files);
+        return Stream.of(files != null ? files : new File[0]);
     }
 
     /**
@@ -58,12 +51,12 @@ class FileHelper {
      * @param query name of the query file to find within the ground truth file.
      * @return Solution Map of specific query applied to given target.
      */
-    Map<String,List<Integer>> readGroundTruth(File file, String target, String query){
+    Map<Integer, Set<Integer>> readGroundTruth(File file, String target, String query){
         List<String[]> groundTruthFile = readFile(file,":");
         boolean targetRead = false;
         boolean blockMatch = false;
         boolean solutionMode = false;
-        Map<String,List<Integer>> solutionMap = new HashMap<>();
+        Map<Integer,Set<Integer>> solutionMap = new HashMap<>();
         int currentSolutionIndex=0;
         int totalSolutions=0;
         if (groundTruthFile != null) {
@@ -89,7 +82,7 @@ class FileHelper {
                             String[] pairs = line[2].split(Pattern.quote(";"));
                             for (String pair: pairs) {
                                 String[] solution = pair.split(Pattern.quote(","));
-                                String key = "U"+solution[0];
+                                int  key = Integer.parseInt(solution[0]);
                                 int value = Integer.parseInt(solution[1]);
                                 populateResultMap(solutionMap,key,value);
                             }
@@ -120,11 +113,11 @@ class FileHelper {
         return fileStream;
     }
 
-    void populateResultMap( Map<String,List<Integer>>  solutionMap, String key, int value){
+    void populateResultMap( Map<Integer, Set<Integer>>  solutionMap, int key, int value){
         if(solutionMap.containsKey(key)){
             solutionMap.get(key).add(value);
         }else {
-            List<Integer> list = new ArrayList<>();
+            Set<Integer> list = new HashSet<>();
             list.add(value);
             solutionMap.put(key,list);
         }

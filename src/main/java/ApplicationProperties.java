@@ -2,7 +2,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class ApplicationProperties {
+class ApplicationProperties {
     private InputStream input;
     private Properties prop = new Properties();
 
@@ -12,7 +12,7 @@ public class ApplicationProperties {
     private final String DEFAULTGROUNDTRUTHPATH = "/home/vishal/dev/courses/CSCI729/HW4/Proteins";
 
 
-    public ApplicationProperties(String fileName) {
+    ApplicationProperties(String fileName) {
         try {
             input = getClass().getClassLoader().getResourceAsStream(fileName);
             if (input != null)
@@ -21,24 +21,26 @@ public class ApplicationProperties {
             e.printStackTrace();
         }finally {
             try {
-                input.close();
+                if (input != null) {
+                    input.close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
-    public String Neo4JDbPath(){
+    String Neo4JDbPath(){
         return prop.getProperty("neo4jdbpath",NEO4JDEFAULTPATH);
     }
 
-    public String ProteinsTargetPath(){
+    String ProteinsTargetPath(){
         return prop.getProperty("proteinsfolderpath",DEFAULTPROTEINSFOLDERPATH);
     }
 
-    public String ProteinsQueryPath(){
+    String ProteinsQueryPath(){
         return prop.getProperty("proteinsquerypath",DEFAULTQUERYPATH);
     }
-    public String ProteinsGroundTruthPath(){
+    String ProteinsGroundTruthPath(){
         return prop.getProperty("proteingroundtruthpath",DEFAULTGROUNDTRUTHPATH);
     }
 }

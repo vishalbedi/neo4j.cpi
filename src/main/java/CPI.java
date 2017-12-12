@@ -1,27 +1,22 @@
 import org.neo4j.graphdb.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CPI {
 
-    private final ApplicationProperties applicationProperties;
     private QueryGraph queryGraph;
     private GraphDatabaseService db;
 
-    public CPI(ApplicationProperties applicationProperties, QueryGraph queryGraph, GraphDatabaseService db){
-        this.applicationProperties = applicationProperties;
+    CPI(QueryGraph queryGraph, GraphDatabaseService db){
         this.queryGraph = queryGraph;
         this.db = db;
     }
 
-    public boolean candVerify(Node v, Vertex u){
+    private boolean candVerify(Node v, Vertex u){
         if (maxNeighborNode(v) < u.maxNeighborDegree() )
             return false;
-        List<String> u_neighbors = u.getConnections().stream().map(vertex -> vertex.getLabel())
+        List<String> u_neighbors = u.getConnections().stream().map(Vertex::getLabel)
                 .collect(Collectors.toList());
         for (String label :
                 u_neighbors) {
@@ -44,7 +39,7 @@ public class CPI {
         return true;
     }
 
-    public int maxNeighborNode(Node v){
+    private int maxNeighborNode(Node v){
         int max = Integer.MIN_VALUE;
         for(Relationship r : v.getRelationships(Direction.INCOMING)){
             Node neighbor = r.getOtherNode(v);
@@ -55,19 +50,22 @@ public class CPI {
         return max;
     }
 
-    public void rootSelection(){
+    Vertex rootSelection(){
         List<Vertex> core = queryGraph.getCore();
         System.out.println(core.size());
         Vertex root = _rootSelection(core);
         System.out.println("root--> "+root.getLabel());
+        return root;
+    }
+
+    public void computeCPI(){
+        Vertex root = rootSelection();
         computeCPI(root);
     }
 
     private Vertex _rootSelection(List<Vertex> core){
-        Vertex root= null;
-        if(core.size() == 1)
-            root = core.get(0);
-        else{
+        Vertex root= core.get(0);
+        if(core.size() != 1){
             Map<Vertex, List<Node>> candidatesList = new HashMap<>();
             for(Vertex v : core){
                 candidatesList.put(v, candidateComputation(v));
@@ -101,7 +99,6 @@ public class CPI {
         Map<Integer, List<Vertex>> levelTree = queryGraph.getLevelTree(root);
         topDownConstruction(root,levelTree);
         bottomUpRefinement(levelTree);
-        //deleteCPINodes();
     }
 
 
@@ -119,10 +116,10 @@ public class CPI {
     }
 
 
-    private void deleteCPINodes(){
+    public void deleteCPINodes(){
         //Cypher : MATCH (n:CPI) OPTIONAL MATCH (n)-[r]-() DELETE n,r
         try(Transaction tx = db.beginTx()) {
-            ResourceIterator<Node> iter = db.findNodes(Label.label("CPI"));
+            ResourceIterator<Node> iter = db.findNodes(Label.label(Constants.CPI_LABEL));
             while (iter.hasNext()) {
                 Node node = iter.next();
                 for (Relationship r : node.getRelationships(Direction.BOTH)) {
@@ -136,11 +133,12 @@ public class CPI {
     }
 
     private void addCpiRootNodes(List<Node> rootCandidates, Vertex u){
+        int rootLevel = 1;
         try(Transaction tx = db.beginTx()) {
             for (Node node :
                     rootCandidates) {
-                int id = (int) node.getProperty("id");
-                Node cpiNode = createCPINode(u.getLabel(), u.getName(), id, 1, u.getId());
+                int id = (int) node.getProperty(Constants.ID_ATTRIBUTE_KEY);
+                Node cpiNode = createCPINode(u.getLabel(), u.getName(), id, rootLevel, u.getId());
                 u.addCpiCandidateNode(id, cpiNode);
             }
             tx.success();
@@ -153,17 +151,17 @@ public class CPI {
             for (Vertex u : levelTree.get(level)) {
                 Vertex Up = u.getParent();
                 for(Node vp : Up.getCandidateNodes()){
-                    int vpId = (int)vp.getProperty("id");
+                    int vpId = (int)vp.getProperty(Constants.ID_ATTRIBUTE_KEY);
                     Node cpiVp = Up.getCpiCandidateNode().get(vpId);
                     if(cpiVp == null)
                         continue;
                     List<Node> qualifyingNodes = getQualifyingNodes(vp, u, false);
                     for (Node v : qualifyingNodes) {
                         if(u.getCandidateNodes().contains(v)){
-                            int id = (int)v.getProperty("id");
+                            int id = (int)v.getProperty(Constants.ID_ATTRIBUTE_KEY);
                             Node cpiV = createCPINode(u.getLabel(), u.getName(), id, level, u.getId());
-                            cpiVp.createRelationshipTo(cpiV, RelationshipType.withName("connected_to"));
-                            cpiV.createRelationshipTo(cpiVp, RelationshipType.withName("connected_to"));
+                            cpiVp.createRelationshipTo(cpiV, RelationshipType.withName(Constants.CONNECTED_TO));
+                            cpiV.createRelationshipTo(cpiVp, RelationshipType.withName(Constants.CONNECTED_TO));
                             u.addCpiCandidateNode(id,cpiV);
                         }
                     }
@@ -176,12 +174,12 @@ public class CPI {
 
 
     private Node createCPINode(String dataLabel, String name, int id, int level, int candidateOf){
-        Node node = db.createNode(Label.label("CPI"));
-        node.setProperty("level", level);
-        node.setProperty("dataLabel", dataLabel);
-        node.setProperty("name", name);
-        node.setProperty("id", id);
-        node.setProperty("candidateOf", candidateOf);
+        Node node = db.createNode(Label.label(Constants.CPI_LABEL));
+        node.setProperty(Constants.LEVEL_ATTRIBUTE_KEY, level);
+        node.setProperty(Constants.DATA_LABEL_ATTRIBUTE_KEY, dataLabel);
+        node.setProperty(Constants.NAME_ATTRIBUTE_KEY, name);
+        node.setProperty(Constants.ID_ATTRIBUTE_KEY, id);
+        node.setProperty(Constants.CANDIDATE_OF, candidateOf);
         return node;
     }
 
@@ -194,7 +192,7 @@ public class CPI {
                 COUNT = candidateNeighborFilter(u, COUNT, u_dash);
             }
             int finalCOUNT = COUNT;
-            u.getCandidateNodes().removeIf(node -> (int) node.getProperty("cnt") != finalCOUNT);
+            u.getCandidateNodes().removeIf(node -> (int) node.getProperty(Constants.COUNT_ATTRIBUTE_KEY) != finalCOUNT);
 
         }
         addCountAttribute();//reset count to zero
@@ -227,9 +225,9 @@ public class CPI {
             for (Node v_dash : u_dash.getCandidateNodes()){
                 List<Node> qualifyingNodes = getQualifyingNodes(v_dash, level_u, true);
                 for (Node v: qualifyingNodes) {
-                    int v_count = (int)v.getProperty("cnt");
+                    int v_count = (int)v.getProperty(Constants.COUNT_ATTRIBUTE_KEY);
                     if(v_count == COUNT){
-                        v.setProperty("cnt", v_count+1);
+                        v.setProperty(Constants.COUNT_ATTRIBUTE_KEY, v_count+1);
                     }
                 }
             }
@@ -242,12 +240,12 @@ public class CPI {
 
     private List<Node> getNodesWithCount(int count){
         List<Node> candidates = new ArrayList<>();
-        for(String label : queryGraph.SearchQueryVertices.values().stream().map(vertex -> vertex.getLabel())
+        for(String label : queryGraph.SearchQueryVertices.values().stream().map(Vertex::getLabel)
                 .distinct().collect(Collectors.toList())){
             ResourceIterator<Node> nodes = db.findNodes(Label.label(label));
             while (nodes.hasNext()){
                 Node n = nodes.next();
-                if((int) n.getProperty("cnt") == count)
+                if((int) n.getProperty(Constants.COUNT_ATTRIBUTE_KEY) == count)
                     candidates.add(n);
             }
         }
@@ -256,12 +254,12 @@ public class CPI {
 
     private void addCountAttribute(){
         try ( Transaction tx = db.beginTx() ){
-            for(String label : queryGraph.SearchQueryVertices.values().stream().map(vertex -> vertex.getLabel())
+            for(String label : queryGraph.SearchQueryVertices.values().stream().map(Vertex::getLabel)
                     .distinct().collect(Collectors.toList())){
                 ResourceIterator<Node> nodes = db.findNodes(Label.label(label));
                 while (nodes.hasNext()){
                     Node n = nodes.next();
-                    n.setProperty("cnt",0);
+                    n.setProperty(Constants.COUNT_ATTRIBUTE_KEY,0);
                 }
             }
             tx.success();
@@ -296,18 +294,19 @@ public class CPI {
                 List<Node> candidates_of_u = u.getCandidateNodes();
 
                 int finalCount = COUNT;
-                candidates_of_u.removeIf(node -> (int) node.getProperty("cnt") != finalCount);
+                candidates_of_u.removeIf(node -> (int) node.getProperty(Constants.COUNT_ATTRIBUTE_KEY) != finalCount);
 
                 addCountAttribute();        // reset cnt to 0
                 for(Node v : candidates_of_u){
                     for(Vertex u_dash : levelTree.get(level+1)) {
                         if (u_dash.getParent().getId() == u.getId()) {
                             List<Integer> u_dashCandidateIds = u_dash.getCandidateNodes()
-                                    .stream().map(node -> (int)node.getProperty("id")).collect(Collectors.toList());
+                                    .stream().map(node -> (int)node.getProperty(Constants.ID_ATTRIBUTE_KEY))
+                                    .collect(Collectors.toList());
                             try(Transaction tx = db.beginTx()){
                                 for (Node v_dash :
                                         getCpiAdjacencyList(v, u, u_dash)) {
-                                    int v_dashId = (int) v_dash.getProperty("id");
+                                    int v_dashId = (int) v_dash.getProperty(Constants.ID_ATTRIBUTE_KEY);
                                     if(!u_dashCandidateIds.contains(v_dashId)){
                                         for (Relationship r : v_dash.getRelationships(Direction.BOTH)) {
                                             r.delete();
@@ -326,14 +325,38 @@ public class CPI {
     }
 
 
+    public Map<Integer, Set<Integer>> getCPIMap(){
+        Map<Integer, Set<Integer>> cpiMap = new HashMap<>();
+        for (Vertex u :
+                queryGraph.SearchQueryVertices.values()) {
+            cpiMap.put(u.getId(),getCPINodeIds(u));
+
+        }
+        return cpiMap;
+    }
+
+    private Set<Integer> getCPINodeIds(Vertex u){
+        Set<Integer> cpiNodeIds = new HashSet<>();
+        ResourceIterator<Node> iterator = db.findNodes(Label.label(Constants.CPI_LABEL),
+                Constants.CANDIDATE_OF,u.getId());
+        while (iterator.hasNext()){
+            Node cpiNode = iterator.next();
+            int nodeId = (int) cpiNode.getProperty(Constants.ID_ATTRIBUTE_KEY);
+                cpiNodeIds.add(nodeId);
+        }
+        return cpiNodeIds;
+
+    }
+    
     private List<Node> getCpiAdjacencyList(Node v, Vertex u, Vertex u_dash){
         List<Node> adjacencyListV = new ArrayList<>();
-        int id = (int) v.getProperty("id");
-        ResourceIterator<Node> itrIterator = db.findNodes(Label.label("CPI"), "id", id);
+        int id = (int) v.getProperty(Constants.ID_ATTRIBUTE_KEY);
+        ResourceIterator<Node> itrIterator = db.findNodes(Label.label(Constants.CPI_LABEL),
+                Constants.ID_ATTRIBUTE_KEY, id);
         Node cpiV = null;
         while (itrIterator.hasNext()){
             Node node = itrIterator.next();
-            if((int)node.getProperty("candidateOf") == u.getId()){
+            if((int)node.getProperty(Constants.CANDIDATE_OF) == u.getId()){
                 cpiV = node;
                 break;
             }
@@ -343,7 +366,8 @@ public class CPI {
         for (Relationship r :
                 cpiV.getRelationships(Direction.INCOMING)) {
             Node otherNode = r.getOtherNode(cpiV);
-            if(!adjacencyListV.contains(otherNode) && (int)otherNode.getProperty("candidateOf") == u_dash.getId())
+            if(!adjacencyListV.contains(otherNode) && (int)otherNode
+                    .getProperty(Constants.CANDIDATE_OF) == u_dash.getId())
                 adjacencyListV.add(otherNode);
         }
         return adjacencyListV;
