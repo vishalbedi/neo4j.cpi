@@ -52,9 +52,9 @@ public class CPI {
 
     Vertex rootSelection(){
         List<Vertex> core = queryGraph.getCore();
-        System.out.println(core.size());
         Vertex root = _rootSelection(core);
-        System.out.println("root--> "+root.getLabel());
+        System.out.println("Number of Nodes in Core: " + core.size());
+        System.out.println("Query Root Node: " + root.getLabel());
         return root;
     }
 

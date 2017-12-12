@@ -1,9 +1,11 @@
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,19 +42,24 @@ public class Application {
                 .forEach(gt_file->targetFileNames
                         .forEach(targetFile-> queryFiles
                                 .forEach(queryFile -> checkCpiAgainstGroundTruth(queryFile, gt_file, targetFile))));
+        graphDb.shutdown();
     }
 
     private void checkCpiAgainstGroundTruth(File queryFile, File groundTruthFile, String targetFileName){
+        System.out.println("=======================================================================================");
+        System.out.println("Query File: " + queryFile.getName());
+        System.out.println("Target File: " + targetFileName);
+        System.out.println(" CPI computation Started ");
         try ( Transaction tx = graphDb.beginTx() ){
             Map<Integer, Set<Integer>> cpiMap = this.getCpiMap(queryFile,targetFileName);
             Map<Integer, Set<Integer>> groundTruthMap = fileHelper.readGroundTruth(groundTruthFile,
                     targetFileName,queryFile.getName());
-            for (int key :
-                    cpiMap.keySet()) {
-                if (cpiMap.get(key).containsAll(groundTruthMap.get(key))) {
-                    System.out.println(true);
-                }
+            List<Boolean> check = new ArrayList<>();
+            for (int key : cpiMap.keySet()) {
+                check.add(cpiMap.get(key).containsAll(groundTruthMap.get(key)));
             }
+            System.out.println("ALL MATCH : " + !check.contains(false));
+
             tx.success();
             tx.close();
         }
