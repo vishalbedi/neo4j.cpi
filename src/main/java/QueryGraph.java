@@ -38,15 +38,15 @@ public class QueryGraph {
         forest = computeForest(queryVertices);
 
         System.out.print("Core : ");
-        core.forEach(c->System.out.print(c.getName() +" : " +c.getId() + " "));
+        core.forEach(c->System.out.print(c.getName() +":" +c.getId() + " "));
         System.out.println();
 
         System.out.print("Forest : ");
-        forest.forEach(f->System.out.print(f.getName() +" : " +f.getId() + " "));
+        forest.forEach(f->System.out.print(f.getName() +":" +f.getId() + " "));
         System.out.println();
 
         System.out.print("Leaf: ");
-        leaf.forEach(l->System.out.print(l.getName() +" : " +l.getId() + " "));
+        leaf.forEach(l->System.out.print(l.getName() +":" +l.getId() + " "));
         System.out.println();
     }
 
