@@ -1,4 +1,3 @@
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
@@ -49,7 +48,7 @@ public class Application {
         System.out.println("=======================================================================================");
         System.out.println("Query File: " + queryFile.getName());
         System.out.println("Target File: " + targetFileName);
-        System.out.println(" CPI computation Started ");
+        System.out.println("CPI computation Started ");
         try ( Transaction tx = graphDb.beginTx() ){
             Map<Integer, Set<Integer>> cpiMap = this.getCpiMap(queryFile,targetFileName);
             Map<Integer, Set<Integer>> groundTruthMap = fileHelper.readGroundTruth(groundTruthFile,
