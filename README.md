@@ -5,7 +5,7 @@ Implemented the algorithm in paper Efficient Subgraph Matching by Postponing Car
 
 Designed and implemented query decomposition described in Section 3
 
-Designed and implemented CPI using Neo4j along with root node selection described in Appendix A.6.
+Designed and implemented Compact Path-Index (CPI) using Neo4j along with root node selection described in Appendix A.6.
 
 Using the ground truth in Proteins, decomposed the different query graphs, computed CPIs for the decompositions, and provided a Java program that automatically checks if all the expected solutions are contained in the computed CPIs
 
